@@ -1,0 +1,79 @@
+Parameters:
+  DeploymentPhase:
+    Type: "String"
+    Default: "Development"
+    AllowedValues:
+      - "Development"
+      - "Production"
+    Description: >
+      Deployment phases - 
+      Development is for testing changes before commit and stack changes are 
+      run manually through Console or CLI;
+      Production is the final deployment;
+Mappings:
+  DeploymentPhaseProperties:
+    Development:
+      ResourceSuffix: "-dev"
+    Production:
+      ResourceSuffix: ""
+Resources:
+  DDBWorkClocksTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub
+        - "WorkClocks${Suffix}"
+        - Suffix: !FindInMap
+            - "DeploymentPhaseProperties"
+            - !Ref "DeploymentPhase"
+            - "ResourceSuffix"
+      KeySchema:
+        - AttributeName: "Owner"
+          KeyType: "HASH"
+        - AttributeName: "WorkClockName"
+          KeyType: "RANGE"
+      AttributeDefinitions:
+        - AttributeName: "Owner"
+          AttributeType: "S"
+        - AttributeName: "WorkClockName"
+          AttributeType: "S"
+      BillingMode: "PAY_PER_REQUEST"
+  DDBWorkClockPropertiesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub
+        - "WorkClockProperties${Suffix}"
+        - Suffix: !FindInMap
+            - "DeploymentPhaseProperties"
+            - !Ref "DeploymentPhase"
+            - "ResourceSuffix"
+      KeySchema:
+        - AttributeName: "WorkClock"
+          KeyType: "HASH"
+        - AttributeName: "Updated"
+          KeyType: "RANGE"
+      AttributeDefinitions:
+        - AttributeName: "WorkClock"
+          AttributeType: "S"
+        - AttributeName: "Updated"
+          AttributeType: "N"
+      BillingMode: "PAY_PER_REQUEST"
+  DDBWorkLogTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub
+        - "WorkLog${Suffix}"
+        - Suffix: !FindInMap
+            - "DeploymentPhaseProperties"
+            - !Ref "DeploymentPhase"
+            - "ResourceSuffix"
+      KeySchema:
+        - AttributeName: "WorkClock"
+          KeyType: "HASH"
+        - AttributeName: "Started"
+          KeyType: "RANGE"
+      AttributeDefinitions:
+        - AttributeName: "WorkClock"
+          AttributeType: "S"
+        - AttributeName: "Started"
+          AttributeType: "N"
+      BillingMode: "PAY_PER_REQUEST"
